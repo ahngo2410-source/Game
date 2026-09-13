@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>2D Pixel Survivor - Skill System</title>
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      user-select: none; 
+      -webkit-user-select: none; 
+      -webkit-touch-callout: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      background: #111;
+      font-family: 'Courier New', Courier, monospace;
+      color: #fff;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      height: 100%;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+    }
+    
+    #lobby-screen, #victory-screen, #gameover-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      border: 2px solid #444;
+      border-radius: 8px;
+    }
+
+    #victory-screen {
+      display: none;
+      background: rgba(10, 30, 20, 0.96);
+      border-color: #4CAF50;
+    }
+
+    #gameover-screen {
+      display: none;
+      background: rgba(40, 10, 10, 0.96);
+      border-color: #f44336;
+    }
+
+    .game-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffeb3b;
+      text-shadow: 0 0 10px rgba(255, 235, 59, 0.5);
+      margin-bottom: 5px;
+    }
+
+    .victory-title {
+      font-size: 26px;
+      font-weight: bold;
+      color: #4CAF50;
+      text-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+      margin-bottom: 10px;
+      animation: pulse 1.5s infinite;
+    }
+
+    .gameover-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #f44336;
+      text-shadow: 0 0 15px rgba(244, 67, 54, 0.8);
+      margin-bottom: 10px;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .play-btn {
+      margin-top: 10px;
+      padding: 12px 35px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background: #4CAF50;
+      border: 3px solid #fff;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(76, 175, 80, 0.6);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .home-btn {
+      margin-top: 10px;
+      padding: 10px 25px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+      background: #607d8b;
+      border: 2px solid #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(96, 125, 139, 0.6);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .home-btn:active {
+      transform: scale(0.95);
+    }
+
+    .stats-btn {
+      margin-top: 8px;
+      padding: 8px 25px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      background: #9c27b0;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(156, 39, 176, 0.5);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .stats-btn:active {
+      transform: scale(0.95);
+    }
+
+    .how-to-play-btn {
+      margin-top: 8px;
+      padding: 8px 25px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      background: #2196F3;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(33, 150, 243, 0.5);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .how-to-play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-danger {
+      background: #f44336;
+      box-shadow: 0 6px 15px rgba(244, 67, 54, 0.6);
+    }
+
+    .leaderboard {
+      margin-top: 10px;
+      width: 90%;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 12px;
+    }
+    .leaderboard h4 {
+      color: #ffeb3b;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    .leaderboard ol {
+      list-style-position: inside;
+      text-align: left;
+    }
+    .leaderboard li {
+      margin: 3px 0;
+      color: #ddd;
+    }
+
+    .clear-btn {
+      background: none;
+      border: none;
+      color: #ff8a80;
+      font-size: 10px;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    .hud {
+      width: 100%;
+      background: #222;
+      border: 2px solid #444;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .hp-bar-bg {
+      width: 80px;
+      height: 12px;
+      background: #555;
+      border: 1px solid #000;
+      border-radius: 4px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .hp-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: #ff4d4d;
+      transition: width 0.1s linear;
+    }
+    canvas {
+      background: #2b3a42;
+      border: 2px solid #444;
+      border-top: none;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      image-rendering: pixelated;
+      width: 100%;
+      max-height: 55vh;
+      object-fit: contain;
+    }
+    .controls-panel {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 10px 10px;
+      flex-shrink: 0;
+      height: 110px;
+    }
+
+    .joystick-touch-zone {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      z-index: 10;
+      touch-action: none;
+    }
+
+    .joystick-container {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      touch-action: none;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      z-index: 11;
+      transform: translate(-50%, -50%);
+    }
+    .joystick-stick {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      transform: translate(0, 0);
+    }
+    
+    .skill-btn {
+      width: 100px;
+      height: 70px;
+      background: #ff9800;
+      border: 3px solid #fff;
+      color: #000;
+      font-weight: bold;
+      font-size: 13px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(255,152,0,0.5);
+      touch-action: manipulation;
+      z-index: 12;
+    }
+    .skill-btn:disabled {
+      background: #555 !important;
+      border-color: #777 !important;
+      color: #aaa !important;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.88);
+      z-index: 30;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #222;
+      border: 3px solid #666;
+      border-radius: 10px;
+      padding: 20px;
+      width: 95%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    #stats-modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 50;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .stats-content {
+      background: #1e1b2e;
+      border: 2px solid #ab47bc;
+      border-radius: 12px;
+      padding: 20px;
+      width: 95%;
+      max-width: 420px;
+      box-shadow: 0 0 20px rgba(171, 71, 188, 0.3);
+    }
+    .stats-header {
+      font-size: 20px;
+      font-weight: bold;
+      color: #e1bee7;
+      text-align: center;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #4a148c;
+      padding-bottom: 8px;
+    }
+    .stats-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.3);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .stat-add-btn {
+      background: #ab47bc;
+      border: 1px solid #fff;
+      color: #fff;
+      font-weight: bold;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .convert-box {
+      margin-top: 15px;
+      padding: 10px;
+      background: rgba(255, 235, 59, 0.1);
+      border: 1px dashed #ffeb3b;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .convert-btn {
+      background: #ffb300;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .diff-btn-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .btn-diff {
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .easy { background: #4CAF50; color: #fff; }
+    .medium { background: #2196F3; color: #fff; }
+    .hard { background: #f44336; color: #fff; }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 15px;
+    }
+    .opt-btn {
+      background: #444;
+      color: #fff;
+      border: 1px solid #666;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+    }
+    .opt-btn:hover { background: #555; }
+
+    #guide-modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92);
+      z-index: 50;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .guide-content {
+      background: #1e293b;
+      border: 2px solid #38bdf8;
+      border-radius: 12px;
+      padding: 20px;
+      width: 95%;
+      max-width: 420px;
+      text-align: left;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+    }
+    .guide-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffeb3b;
+      text-align: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #475569;
+      padding-bottom: 8px;
+    }
+    .guide-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      margin-bottom: 12px;
+    }
+    .guide-warning {
+      font-size: 12px;
+      font-weight: bold;
+      color: #ff4d4d;
+      background: rgba(244, 67, 54, 0.15);
+      border: 1px solid #f44336;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    #weapon-reward-modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 40;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .weapon-rays-container {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 15px 0;
+    }
+
+    .sunburst-rays {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      background: conic-gradient(
+        from 0deg,
+        rgba(255, 215, 0, 0.8) 0deg 15deg,
+        transparent 15deg 30deg,
+        rgba(255, 215, 0, 0.8) 30deg 45deg,
+        transparent 45deg 60deg,
+        rgba(255, 215, 0, 0.8) 60deg 75deg,
+        transparent 75deg 90deg,
+        rgba(255, 215, 0, 0.8) 90deg 105deg,
+        transparent 105deg 120deg,
+        rgba(255, 215, 0, 0.8) 120deg 135deg,
+        transparent 135deg 150deg,
+        rgba(255, 215, 0, 0.8) 150deg 165deg,
+        transparent 165deg 180deg,
+        rgba(255, 215, 0, 0.8) 180deg 195deg,
+        transparent 195deg 210deg,
+        rgba(255, 215, 0, 0.8) 210deg 225deg,
+        transparent 225deg 240deg,
+        rgba(255, 215, 0, 0.8) 240deg 255deg,
+        transparent 255deg 270deg,
+        rgba(255, 215, 0, 0.8) 270deg 285deg,
+        transparent 285deg 300deg,
+        rgba(255, 215, 0, 0.8) 300deg 315deg,
+        transparent 315deg 330deg,
+        rgba(255, 215, 0, 0.8) 330deg 345deg,
+        transparent 345deg 360deg
+      );
+      border-radius: 50%;
+      animation: rotateRays 8s linear infinite;
+      filter: blur(2px);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+
+    @keyframes rotateRays {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .reward-weapon-icon {
+      position: relative;
+      font-size: 80px;
+      z-index: 2;
+      animation: zoomBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+    }
+
+    .weapon-desc-box {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #ffeb3b;
+      border-radius: 8px;
+      padding: 10px 15px;
+      max-width: 320px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 0 10px rgba(255, 235, 59, 0.2);
+    }
+
+    @keyframes zoomBounce {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    #wrong-modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 45;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+    .wrong-card {
+      background: #2b1114;
+      border: 3px solid #ff4d4d;
+      border-radius: 12px;
+      padding: 25px 20px;
+      width: 90%;
+      max-width: 360px;
+      box-shadow: 0 0 25px rgba(255, 77, 77, 0.4);
+      animation: shake 0.4s ease-in-out;
+    }
+    .wrong-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff4d4d;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+    }
+    .wrong-icon {
+      font-size: 60px;
+      margin: 10px 0;
+    }
+    .wrong-desc {
+      font-size: 14px;
+      color: #e2e8f0;
+      margin-bottom: 15px;
+      line-height: 1.4;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <div id="lobby-screen">
+      <div class="game-title">2D PIXEL SURVIVOR</div>
+      <p style="color: #aaa; font-size: 12px; margin-top: 2px;">Tiêu diệt quái vật để nhặt Hộp Quà & Vật Phẩm!</p>
+      <div style="font-size: 36px; margin: 5px 0;">🧙‍♂️</div>
+      
+      <button id="start-game-btn" class="play-btn">CHƠI</button>
+      <button id="open-stats-btn" class="stats-btn">THUỘC TÍNH</button>
+      <button id="how-to-play-btn" class="how-to-play-btn">CÁCH CHƠI</button>
+
+      <div class="leaderboard">
+        <h4>🏆 Bảng Xếp Hạng</h4>
+        <ol id="lobby-leaderboard-list">
+          <li>Chưa có kỷ lục</li>
+        </ol>
+        <button class="clear-btn" onclick="clearLeaderboard()">Xóa lịch sử điểm</button>
+      </div>
+    </div>
+
+    <div id="stats-modal">
+      <div class="stats-content">
+        <div class="stats-header">📊 BẢNG THUỘC TÍNH</div>
+        
+        <div class="stats-info">
+          <span>Điểm thuộc tính: <b id="stat-points-display" style="color: #ab47bc;">0</b></span>
+          <span>Điểm thưởng: <b id="reward-points-display" style="color: #ffeb3b;">0</b></span>
+        </div>
+
+        <div class="stat-row">
+          <span>❤️ Máu tối đa (+10 HP/đ): <b id="stat-hp-val" style="color: #4caf50;">0</b></span>
+          <button class="stat-add-btn" onclick="addStat('hp')">+</button>
+        </div>
+        <div class="stat-row">
+          <span>⚔️ Sát thương (+10%/đ): <b id="stat-dmg-val" style="color: #ff9800;">0</b></span>
+          <button class="stat-add-btn" onclick="addStat('dmg')">+</button>
+        </div>
+        <div class="stat-row">
+          <span>⏱️ Giảm hồi kĩ năng (-5%/đ): <b id="stat-cdr-val" style="color: #2196f3;">0</b></span>
+          <button class="stat-add-btn" onclick="addStat('cdr')">+</button>
+        </div>
+        <div class="stat-row">
+          <span>💖 Hồi máu (+1 HP/s/đ): <b id="stat-regen-val" style="color: #e91e63;">0</b></span>
+          <button class="stat-add-btn" onclick="addStat('regen')">+</button>
+        </div>
+
+        <div class="convert-box">
+          <span>100 Điểm thưởng ➔ 1 Điểm thuộc tính</span>
+          <button class="convert-btn" onclick="convertRewardPoints()">ĐỔI</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px;">
+          <button id="close-stats-btn" class="play-btn" style="padding: 8px 25px; font-size: 14px; margin-top: 0;">ĐÓNG</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="guide-modal">
+      <div class="guide-content">
+        <div class="guide-title">📖 HƯỚNG DẪN CÁCH CHƠI</div>
+        <p class="guide-text">
+          Khi đánh bại quái sẽ có 18% rớt ra hộp quà bí mật, thuốc tăng tốc, bình hồi máu. Khi nhận hộp quà bí mật, bạn sẽ có các câu hỏi với tùy độ khó khác nhau để trả lời, sau khi cho ra đáp án đúng bạn sẽ nhận được 1 trong các vũ khí của độ khó với tỉ lệ ngẫu nhiên.
+        </p>
+        <div class="guide-warning">
+          ⚠️ KHI CHẠM VÀO VẬT PHẨM SẼ TỰ ĐỘNG KÍCH HOẠT VẬT PHẨM NÊN HÃY CHÚ Ý.
+        </div>
+        <div style="text-align: center;">
+          <button id="close-guide-btn" class="play-btn" style="padding: 8px 25px; font-size: 14px; margin-top: 0;">ĐÃ HIỂU</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="victory-screen">
+      <div id="victory-title" class="victory-title">🏆 HOÀN THÀNH ẢI 1! 🏆</div>
+      <p style="color: #8bc34a; font-size: 14px; margin-top: 5px; font-weight: bold;">Bạn đã vượt qua thử thách thành công!</p>
+      <div style="font-size: 40px; margin: 10px 0;">👑✨</div>
+      <p style="font-size: 16px; color: #ffeb3b; margin-bottom: 15px;">Điểm hiện tại: <span id="final-score">0</span></p>
+
+      <button id="next-stage-btn" class="play-btn">ẢI TIẾP THEO ➔</button>
+      <button id="victory-home-btn" class="home-btn">🏠 MÀN HÌNH CHÍNH</button>
+    </div>
+
+    <div id="gameover-screen">
+      <div class="gameover-title">💀 GAME OVER 💀</div>
+      <p style="color: #ffeb3b; font-size: 15px; margin-top: 5px;">Thua cuộc tại Ải: <span id="gameover-stage">1</span></p>
+      <div style="font-size: 40px; margin: 10px 0;">☠️</div>
+      <p style="font-size: 16px; color: #fff; margin-bottom: 5px;">Tổng điểm: <span id="gameover-score">0</span></p>
+
+      <div class="leaderboard">
+        <h4>🏆 Top Điểm Cao</h4>
+        <ol id="gameover-leaderboard-list">
+          <li>Chưa có kỷ lục</li>
+        </ol>
+      </div>
+
+      <button id="restart-btn" class="play-btn btn-danger">CHƠI LẠI</button>
+      <button id="gameover-home-btn" class="home-btn">🏠 MÀN HÌNH CHÍNH</button>
+    </div>
+
+    <div class="hud">
+      <div>
+        HP: <div class="hp-bar-bg"><div id="hp-fill" class="hp-bar-fill"></div></div>
+        <span id="hp-text">100/100</span>
+      </div>
+      <div>Ải: <span id="stage-display">1</span> (<span id="monsters-left">10/10</span>)</div>
+      <div>Vũ khí: <span id="weapon-display" style="color: #ffeb3b;">Tay không</span></div>
+    </div>
+
+    <canvas id="gameCanvas" width="500" height="400"></canvas>
+
+    <div class="controls-panel">
+      <div class="joystick-touch-zone" id="joystick-touch-zone"></div>
+
+      <div class="joystick-container" id="joystick">
+        <div class="joystick-stick" id="joystick-stick"></div>
+      </div>
+
+      <button id="skill-btn" class="skill-btn">
+        <span>KĨ NĂNG</span>
+        <small id="cd-text">(Sẵn sàng)</small>
+      </button>
+    </div>
+
+    <div id="quiz-modal" class="modal">
+      <div class="modal-content">
+        <h3 id="modal-title">🎁 HỘP QUÀ BÍ MẬT</h3>
+        <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Chọn độ khó câu đố để nhận vũ khí xịn!</p>
+        
+        <div id="diff-step" class="diff-btn-container">
+          <button class="btn-diff easy" onclick="selectDifficulty('easy')">DỄ (Vũ khí Thường)</button>
+          <button class="btn-diff medium" onclick="selectDifficulty('medium')">TRUNG BÌNH (Vũ khí Hiếm)</button>
+          <button class="btn-diff hard" onclick="selectDifficulty('hard')">KHÓ (Vũ khí Thần Thoại)</button>
+        </div>
+
+        <div id="quiz-step" style="display: none;">
+          <p id="question-text" style="margin-top: 15px; font-weight: bold; color: #ffeb3b;"></p>
+          <div id="options-container" class="quiz-options"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="weapon-reward-modal">
+      <div style="color: #ffeb3b; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,235,59,0.8);">
+        🎉 BẠN NHẬN ĐƯỢC VŨ KHÍ MỚI!
+      </div>
+      
+      <div class="weapon-rays-container">
+        <div class="sunburst-rays"></div>
+        <div id="reward-weapon-icon" class="reward-weapon-icon">⚔️</div>
+      </div>
+
+      <div id="reward-weapon-name" style="font-size: 20px; font-weight: bold; color: #fff; margin-bottom: 2px;">
+        Kiếm Sắt
+      </div>
+
+      <div class="weapon-desc-box">
+        <p id="reward-weapon-desc" style="font-size: 13px; color: #00e676; line-height: 1.4;">
+          Kỹ năng: Chém cận chiến gây 25 sát thương lên quái vật gần nhất.
+        </p>
+      </div>
+
+      <p style="color: #aaa; font-size: 12px; margin-bottom: 10px;">Sử dụng trong 15 giây!</p>
+
+      <button id="claim-weapon-btn" class="play-btn">NHẬN VŨ KHÍ</button>
+    </div>
+
+    <div id="wrong-modal">
+      <div class="wrong-card">
+        <div class="wrong-title">❌ SAI MẤT RỒI!</div>
+        <div class="wrong-icon">💥</div>
+        <div class="wrong-desc">Đáp án bạn chọn chưa chính xác. Bạn đã bỏ lỡ cơ hội nhận vũ khí lần này!</div>
+        <button id="close-wrong-btn" class="play-btn btn-danger" style="padding: 10px 30px; font-size: 15px; margin-top: 5px;">TIẾP TỤC BẮN</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const CELL_SIZE = 40;
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new AudioCtx();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    window.addEventListener("touchstart", initAudio, { once: true });
+    window.addEventListener("click", initAudio, { once: true });
+
+    function playSound(type) {
+      if (!audioCtx || audioCtx.state !== "running") return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === "shoot") {
+          osc.type = "square";
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === "correct") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.1);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "wrong") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.setValueAtTime(100, now + 0.15);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "pickup") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else if (type === "gameover") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(80, now + 0.6);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.6);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        } else if (type === "victory") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(554.37, now + 0.15);
+          osc.frequency.setValueAtTime(659.25, now + 0.3);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        }
+      } catch (e) {
+        console.log("Audio Error:", e);
+      }
+    }
+
+    let rewardPoints = 0;
+    let statPoints = 0;
+    const playerStats = {
+      hp: 0,
+      dmg: 0,
+      cdr: 0,
+      regen: 0
+    };
+
+    let regenTimer = 0;
+
+    const bareFistWeapon = { 
+      name: "Tay không", 
+      id: "tay_khong", 
+      cd: 1.0, 
+      range: 1 * CELL_SIZE, 
+      icon: "👊",
+      desc: "Đấm cận chiến gây 12 sát thương."
+    };
+
+    const weaponPools = {
+      easy: [
+        { name: "Kiếm Gỗ", id: "kiem_go", cd: 1.0, range: 2 * CELL_SIZE, icon: "🗡️", desc: "Kỹ năng: Chém nhanh gây 15 sát thương." },
+        { name: "Cung Gỗ", id: "cung_go", cd: 0.5, range: 5 * CELL_SIZE, icon: "🏹", desc: "Kỹ năng: Bắn tên từ xa gây 10 sát thương." },
+        { name: "Trượng Gỗ", id: "truong_go", cd: 1.5, range: 5 * CELL_SIZE, icon: "🪄", desc: "Kỹ năng: Bộc phát năng lượng nổ diện rộng gây 12 sát thương." },
+        { name: "Súng Đồ Chơi", id: "sung_do_choi", cd: 2.0, range: 5 * CELL_SIZE, icon: "🔫", desc: "Kỹ năng: Bắn đạn nhựa làm mục tiêu mất máu liên tục theo thời gian." }
+      ],
+      medium: [
+        { name: "Kiếm Sắt", id: "kiem_sat", cd: 1.0, range: 2 * CELL_SIZE, icon: "⚔️", desc: "Kỹ năng: Chém mạnh cận chiến gây 25 sát thương." },
+        { name: "Rìu Sắt", id: "riu_sat", cd: 2.5, range: 3 * CELL_SIZE, icon: "🪓", desc: "Kỹ năng: Chém quét vòng tròn 360° xung quanh bản thân bán kính 3 ô gây 60 sát thương." },
+        { name: "Súng Lục", id: "sung_luc", cd: 1.0, range: 5 * CELL_SIZE, icon: "🔫", desc: "Kỹ năng: Bắn đạn tốc độ cao từ xa gây 18 sát thương." },
+        { name: "Kiếm Lửa", id: "kiem_lua", cd: 1.2, range: 2 * CELL_SIZE, icon: "🔥", desc: "Kỹ năng: Chém quét lửa gây 15 sát thương & thiêu đốt diện rộng." },
+        { name: "Trượng Băng", id: "truong_bang", cd: 2.0, range: 5 * CELL_SIZE, icon: "❄️", desc: "Kỹ năng: Băng bộc bùng nổ gây 15 sát thương & làm chậm kẻ địch 50% trong 3 giây." }
+      ],
+      hard: [
+        { name: "Sét Zeus", id: "zeus_lightning", cd: 5.0, range: 999, icon: "⚡", desc: "Kỹ năng: Giáng 10 luồng sét ngẫu nhiên toàn bản đồ, gây 60 sát thương mỗi tia." },
+        { name: "Đinh Ba Poseidon", id: "poseidon_trident", cd: 5.0, range: 999, icon: "🔱", desc: "Kỹ năng: Quét sóng thần 2 chiều cuộn sạch toàn màn hình gây 120 sát thương." },
+        { name: "Đĩa Thần Sudarshana", id: "sudarshana_chakra", cd: 4.0, range: 999, icon: "☸️", desc: "Kỹ năng: Luân Hồi Trảm tự động ghim 5 kẻ địch thiêu đốt & kéo về người chơi, giảm 20% hồi chiêu khi hạ quái." },
+        { name: "Nỏ Thần An Dương Vương", id: "no_than_kim_quy", cd: 4.5, range: 999, icon: "🏹", desc: "Kỹ năng: Vạn Tiễn Tề Phát trút mưa tên đồng 4s làm chậm 50%; đòn đánh xuyên qua mọi vật thể." },
+        { name: "Súng Plasma", id: "sung_plasma", cd: 0.3, range: 6 * CELL_SIZE, icon: "🔮", desc: "Kỹ năng: Xả đạn năng lượng liên tục cực nhanh gây 25 sát thương mỗi viên." }
+      ]
+    };
+
+    const questionBank = {
+      easy: [
+        { q: "1 + 1 bằng bao nhiêu?", options: ["1", "2", "3", "4"], answer: 1 },
+        { q: "Mặt trời mọc ở hướng nào?", options: ["Tây", "Nam", "Bắc", "Đông"], answer: 3 }
+      ],
+      medium: [
+        { q: "Cho cấp số cộng có u1 = 3, d = 2. Giá trị u5 bằng bao nhiêu?", options: ["9", "11", "13", "15"], answer: 1 },
+        { q: "Đạo hàm của hàm số f(x) = x³ - 2x + 1 là:", options: ["3x² - 2", "3x² + 2", "x² - 2", "3x - 2"], answer: 0 },
+        { q: "Nghiệm của phương trình 2^x = 8 là:", options: ["x = 2", "x = 3", "x = 4", "x = 6"], answer: 1 },
+        { q: "Giá trị của log2(16) là:", options: ["2", "3", "4", "8"], answer: 2 },
+        { q: "Một nguyên hàm của hàm số f(x) = 2x là:", options: ["x² + C", "2x² + C", "x + C", "2 + C"], answer: 0 },
+        { q: "Trong hình hộp ABCD.A'B'C'D', vectơ nào bằng AB?", options: ["DC", "AD", "BA", "CD"], answer: 0 },
+        { q: "Hàm số y = x² - 4x + 3 có tọa độ đỉnh là:", options: ["(2; -1)", "(-2; -1)", "(2; 1)", "(-2; 1)"], answer: 0 },
+        { q: "Giá trị của sin(30°) + cos(60°) bằng:", options: ["0", "1/2", "1", "2"], answer: 2 },
+        { q: "Phương trình x² - 5x + 6 = 0 có nghiệm là:", options: ["x = 1; 6", "x = 2; 3", "x = -2; -3", "x = -1; -6"], answer: 1 },
+        { q: "Nếu f'(x) > 0 trên một khoảng K thì hàm số f(x):", options: ["Nghịch biến trên K", "Đồng biến trên K", "Không đổi trên K", "Luôn đạt cực đại"], answer: 1 },
+        { q: "Hàm số f(x) = x³ - 3x² + 2 có bao nhiêu điểm cực trị?", options: ["0", "1", "2", "3"], answer: 2 },
+        { q: "Cho cấp số nhân có u1 = 2, q = 3. Giá trị u5 là:", options: ["54", "81", "162", "243"], answer: 2 },
+        { q: "Tính tích phân ∫(3x² - 4x + 1)dx:", options: ["x³ - 2x² + x + C", "3x³ - 4x² + x + C", "x³ - 4x² + x + C", "x³ - 2x + x + C"], answer: 0 },
+        { q: "Số nghiệm của phương trình ln(x - 1) = 0 là:", options: ["0", "1", "2", "3"], answer: 1 },
+        { q: "Tập xác định của y = (x + 1)/(x - 2) là:", options: ["R", "R \\ {-1}", "R \\ {2}", "(2; +∞)"], answer: 2 },
+        { q: "Khoảng cách giữa A(1;2;3) và B(3;2;6) trong Oxyz là:", options: ["√10", "√12", "√13", "5"], answer: 2 },
+        { q: "Cho a=(1;2;-1), b=(2;-1;3). Tích vô hướng a·b bằng:", options: ["-3", "-1", "1", "3"], answer: 0 },
+        { q: "Phương trình 3^x + 3^(x+1) = 36 có nghiệm:", options: ["x = 1", "x = 2", "x = 3", "x = 4"], answer: 1 },
+        { q: "Giá trị lớn nhất của f(x) = -x² + 4x + 1 trên R là:", options: ["1", "4", "5", "6"], answer: 2 },
+        { q: "Hộp có 5 bi đỏ, 3 bi xanh. Xác suất lấy được bi đỏ là:", options: ["3/8", "5/8", "3/5", "1/2"], answer: 1 },
+        { q: "Tìm m để x² - 2mx + m + 2 = 0 có 2 nghiệm phân biệt:", options: ["m > -1", "m < 2", "m < -1 hoặc m > 2", "-1 < m < 2"], answer: 2 },
+        { q: "Tập nghiệm của bất phương trình x² - 4x + 3 ≤ 0 trên [-2; 4] là:", options: ["[1; 3]", "[-2; 1]", "[3; 4]", "[-2; 4]"], answer: 0 },
+        { q: "Số nghiệm của phương trình log2(x² - 3x + 2) = 1 là:", options: ["0", "1", "2", "3"], answer: 2 },
+        { q: "Cho f(x) = (x² + 1)/(x - 1). Hàm số có bao nhiêu điểm cực trị?", options: ["0", "1", "2", "3"], answer: 2 },
+        { q: "Bất phương trình x² - 2x + m ≤ 0 có nghiệm khi:", options: ["m < 1", "m ≤ 1", "m ≥ 1", "m > 1"], answer: 1 },
+        { q: "Từ nào dưới đây là từ láy?", options: ["học tập", "long lanh", "xe đạp", "nhà cửa"], answer: 1 },
+        { q: "Trong câu “Những bông hoa đang khoe sắc dưới ánh nắng.”, chủ ngữ là", options: ["Những", "Những bông hoa", "đang khoe sắc", "dưới ánh nắng"], answer: 1 },
+        { q: "Từ “chạy” trong câu nào được dùng theo nghĩa chuyển?", options: ["Em chạy rất nhanh.", "Nam chạy bộ mỗi sáng.", "Chiếc xe chạy bon bon trên đường.", "Bé chạy ra sân."], answer: 2 },
+        { q: "“Mặt trời xuống biển như hòn lửa” sử dụng biện pháp tu từ", options: ["nhân hóa", "so sánh", "điệp ngữ", "hoán dụ"], answer: 1 },
+        { q: "Từ đồng nghĩa với “dũng cảm” là", options: ["nhút nhát", "can đảm", "yếu đuối", "sợ hãi"], answer: 1 },
+        { q: "Câu nào sau đây là câu ghép?", options: ["Trời mưa.", "Em đang học bài.", "Trời mưa nên đường rất trơn.", "Những bông hoa nở rộ."], answer: 2 },
+        { q: "Thành phần biệt lập trong “Có lẽ, ngày mai trời sẽ mưa.” là", options: ["ngày mai", "trời", "sẽ mưa", "có lẽ"], answer: 3 },
+        { q: "Từ “xuân” trong “Mùa xuân đang về trên khắp phố phường” thuộc trường từ vựng nào?", options: ["thời gian", "thiên nhiên", "con người", "hoạt động"], answer: 0 },
+        { q: "Phương thức biểu đạt chính nhằm trình trình bày, giải thích và cung cấp tri thức về một đối tượng là", options: ["tự sự", "miêu tả", "thuyết minh", "biểu cảm"], answer: 2 },
+        { q: "Tục ngữ thể hiện bài học về tinh thần đoàn kết là", options: ["Có công mài sắt, có ngày nên kim.", "Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao.", "Đi một ngày đàng, học một sàng khôn.", "Ăn quả nhớ kẻ trồng cây."], answer: 1 },
+        { q: "“Áo chàm đưa buổi phân li” chủ yếu sử dụng biện pháp", options: ["so sánh", "hoán dụ", "nhân hóa", "nói quá"], answer: 1 },
+        { q: "“Mẹ là ngọn gió của con suốt đời” sử dụng biện pháp", options: ["ẩn dụ", "hoán dụ", "điệp ngữ", "nói giảm nói tránh"], answer: 0 },
+        { q: "Tác dụng nổi bật của phép điệp là", options: ["làm câu văn dài hơn", "tạo sự liên kết máy móc", "nhấn mạnh ý, tạo nhịp điệu và cảm xúc", "thay thế hoàn toàn lập luận"], answer: 2 },
+        { q: "“Nếu trời mưa thì chúng tôi sẽ ở nhà.” thể hiện quan hệ", options: ["nguyên nhân – kết quả", "điều kiện – kết quả", "tương phản", "tăng tiến"], answer: 1 },
+        { q: "Câu nào sử dụng nói giảm nói tránh?", options: ["Anh ấy đã chết.", "Anh ấy đã về với tổ tiên.", "Anh ấy chết rất nhanh.", "Anh ấy không còn sống nữa."], answer: 1 },
+        { q: "Trong văn nghị luận, luận cứ có vai trò chủ yếu là", options: ["kể lại câu chuyện", "làm rõ và hỗ trợ cho luận điểm", "tạo yếu tố hài hước", "miêu tả nhân vật"], answer: 1 },
+        { q: "Đoạn văn tập trung làm rõ một ý chính, các câu còn lại triển khai và hỗ trợ cho ý đó. Ý chính ấy gọi là", options: ["câu cảm thán", "câu chủ đề", "câu đặc biệt", "câu ghép"], answer: 1 },
+        { q: "Câu nào có lỗi dùng từ không đúng nghĩa?", options: ["Anh ấy có một quyết định sáng suốt.", "Cô ấy rất kiên trì trong học tập.", "Bài viết này rất xúc tích và ngắn gọn.", "Nhà trường tổ chức một buổi ngoại khóa."], answer: 2 },
+        { q: "Khi phân tích một đoạn thơ, yếu tố nào không nên được xem xét tách rời nội dung?", options: ["hình ảnh thơ", "từ ngữ", "biện pháp tu từ", "số trang của tác phẩm"], answer: 3 },
+        { q: "Trong văn nghị luận xã hội, thao tác lập luận dùng để bác bỏ một quan điểm sai lệch là", options: ["phân tích", "chứng minh", "bác bỏ", "so sánh"], answer: 2 },
+        { q: "“Một người chỉ thực sự trưởng thành khi biết chịu trách nhiệm về những lựa chọn của chính mình.” Nhận định phù hợp nhất là", options: ["Đây là câu miêu tả một người trưởng thành.", "Đây là một nhận định mang tính nghị luận, nêu quan niệm về sự trưởng thành.", "Đây là câu kể về một sự việc cụ thể.", "Đây là câu biểu cảm về tuổi trưởng thành."], answer: 1 },
+        { q: "“Mạng xã hội giúp con người kết nối nhanh chóng hơn. Tuy nhiên, nếu sử dụng thiếu kiểm soát, nó có thể khiến con người phụ thuộc vào thế giới ảo và giảm khả năng giao tiếp trực tiếp.” Quan hệ lập luận chủ yếu là", options: ["nguyên nhân – kết quả", "tương phản/đối lập", "tăng tiến", "giải thích – minh họa"], answer: 1 },
+        { q: "“Con đường làng uốn mình giữa những hàng tre xanh mướt.” Biện pháp tu từ và tác dụng phù hợp nhất là", options: ["nhân hóa, khiến con đường trở nên sinh động, có sức sống", "hoán dụ, làm nổi bật màu xanh", "nói quá, nhấn mạnh độ dài của con đường", "điệp ngữ, tạo nhịp điệu cho câu văn"], answer: 0 },
+        { q: "“Thành công không phải lúc nào cũng đến từ những bước tiến lớn. Đôi khi, nó được tạo nên từ hàng trăm nỗ lực nhỏ bé mà ta kiên trì thực hiện mỗi ngày.” Thông điệp chính là", options: ["chỉ những người tài giỏi mới có thể thành công.", "thành công phụ thuộc hoàn toàn vào may mắn.", "những nỗ lực nhỏ nhưng bền bỉ có thể góp phần tạo nên thành công.", "muốn thành công phải đạt được những thành tựu lớn ngay từ đầu."], answer: 2 },
+        { q: "“Có những thất bại khiến ta đau đớn, nhưng cũng chính chúng buộc ta nhìn lại con đường mình đã đi. Nếu biết rút kinh nghiệm, thất bại không còn là dấu chấm hết mà trở thành một bài học cần thiết cho những bước tiến tiếp theo.” Tư tưởng khái quát nhất là", options: ["Thất bại luôn khiến con người đau khổ.", "Con người không nên sợ thất bại vì thất bại có thể trở thành cơ hội để học hỏi và tiến bộ.", "Mọi thất bại đều mang lại thành công.", "Chỉ cần thất bại nhiều lần thì chắc chắn sẽ thành công."], answer: 1 }
+      ],
+      hard: [
+        { q: "Hành tinh nào lớn nhất Hệ Mặt Trời?", options: ["Trái Đất", "Sao Hỏa", "Sao Mộc", "Sao Thổ"], answer: 2 },
+        { q: "Ký hiệu hóa học của Vàng là gì?", options: ["Ag", "Au", "Cu", "Fe"], answer: 1 }
+      ]
+    };
+
+    let isPaused = true;
+    let score = 0;
+    let stage = 1;
+
+    const MONSTERS_PER_STAGE = 10;
+    let monstersSpawnedInStage = 0;
+    let monstersKilledInStage = 0;
+    let bossSpawned = false;
+
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      size: 24,
+      baseSpeed: 3,
+      speed: 3,
+      speedBuffTimer: 0,
+      hp: 100,
+      maxHp: 100,
+      icon: "🧙‍♂️"
+    };
+
+    const keys = {};
+    let joystickInput = { x: 0, y: 0 };
+
+    let currentWeapon = bareFistWeapon;
+    let weaponTimer = 0;
+    let skillCdTimer = 0;
+
+    let monsters = [];
+    let projectiles = [];
+    let visualEffects = [];
+    let lootBoxes = [];
+    let powerUps = [];
+    let spawnTimer = 0;
+    const animalIcons = ["🐱", "🐶", "🦊", "🐺", "🦁", "🐯", "🐗", "🐻"];
+
+    window.addEventListener("keydown", e => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.code === "Space" || e.key.toLowerCase() === "e") castSkill();
+    });
+    window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+    const skillBtn = document.getElementById("skill-btn");
+    skillBtn.addEventListener("click", castSkill);
+    skillBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      castSkill();
+    }, { passive: false });
+
+    const touchZone = document.getElementById("joystick-touch-zone");
+    const joystickContainer = document.getElementById("joystick");
+    const joystickStick = document.getElementById("joystick-stick");
+    
+    let joystickActive = false;
+    let joystickTouchId = null;
+    let joystickCenter = { x: 0, y: 0 };
+
+    function handleJoystickStart(e) {
+      if (e.type === "touchstart") e.preventDefault();
+      initAudio();
+
+      const touch = e.touches ? e.touches[0] : e;
+      if (e.touches) joystickTouchId = touch.identifier;
+
+      const parentRect = document.querySelector('.controls-panel').getBoundingClientRect();
+      joystickCenter.x = touch.clientX - parentRect.left;
+      joystickCenter.y = touch.clientY - parentRect.top;
+
+      joystickContainer.style.left = `${joystickCenter.x}px`;
+      joystickContainer.style.top = `${joystickCenter.y}px`;
+      joystickContainer.style.display = "flex";
+
+      joystickActive = true;
+      handleJoystickMove(e);
+    }
+
+    function handleJoystickMove(e) {
+      if (!joystickActive) return;
+      let touch = e;
+      if (e.touches) {
+        for (let t of e.touches) {
+          if (t.identifier === joystickTouchId) { touch = t; break; }
+        }
+      }
+
+      const parentRect = document.querySelector('.controls-panel').getBoundingClientRect();
+      const currentTouchX = touch.clientX - parentRect.left;
+      const currentTouchY = touch.clientY - parentRect.top;
+
+      let deltaX = currentTouchX - joystickCenter.x;
+      let deltaY = currentTouchY - joystickCenter.y;
+      const distance = Math.hypot(deltaX, deltaY);
+      const maxRadius = 45;
+
+      if (distance > maxRadius) {
+        deltaX = (deltaX / distance) * maxRadius;
+        deltaY = (deltaY / distance) * maxRadius;
+      }
+
+      joystickStick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+      joystickInput.x = deltaX / maxRadius;
+      joystickInput.y = deltaY / maxRadius;
+    }
+
+    function handleJoystickEnd(e) {
+      if (!joystickActive) return;
+      if (e.touches) {
+        let stillTouching = false;
+        for (let t of e.touches) {
+          if (t.identifier === joystickTouchId) stillTouching = true;
+        }
+        if (stillTouching) return;
+      }
+
+      joystickActive = false;
+      joystickTouchId = null;
+      joystickContainer.style.display = "none";
+      joystickStick.style.transform = `translate(0px, 0px)`;
+      joystickInput.x = 0;
+      joystickInput.y = 0;
+    }
+
+    touchZone.addEventListener("touchstart", handleJoystickStart, { passive: false });
+    window.addEventListener("touchmove", handleJoystickMove, { passive: false });
+    window.addEventListener("touchend", handleJoystickEnd);
+    window.addEventListener("touchcancel", handleJoystickEnd);
+
+    touchZone.addEventListener("mousedown", handleJoystickStart);
+    window.addEventListener("mousemove", handleJoystickMove);
+    window.addEventListener("mouseup", handleJoystickEnd);
+
+    const lobbyScreen = document.getElementById("lobby-screen");
+    const victoryScreen = document.getElementById("victory-screen");
+    const gameoverScreen = document.getElementById("gameover-screen");
+    const weaponRewardModal = document.getElementById("weapon-reward-modal");
+    const wrongModal = document.getElementById("wrong-modal");
+    const guideModal = document.getElementById("guide-modal");
+    const statsModal = document.getElementById("stats-modal");
+    
+    const startGameBtn = document.getElementById("start-game-btn");
+    const openStatsBtn = document.getElementById("open-stats-btn");
+    const closeStatsBtn = document.getElementById("close-stats-btn");
+    const howToPlayBtn = document.getElementById("how-to-play-btn");
+    const closeGuideBtn = document.getElementById("close-guide-btn");
+    const nextStageBtn = document.getElementById("next-stage-btn");
+    const restartBtn = document.getElementById("restart-btn");
+    const claimWeaponBtn = document.getElementById("claim-weapon-btn");
+    const closeWrongBtn = document.getElementById("close-wrong-btn");
+
+    const victoryHomeBtn = document.getElementById("victory-home-btn");
+    const gameoverHomeBtn = document.getElementById("gameover-home-btn");
+
+    startGameBtn.addEventListener("click", () => {
+      initAudio();
+      lobbyScreen.style.display = "none";
+      applyPlayerStats();
+      isPaused = false;
+    });
+
+    openStatsBtn.addEventListener("click", () => {
+      initAudio();
+      updateStatsUI();
+      statsModal.style.display = "flex";
+    });
+
+    closeStatsBtn.addEventListener("click", () => {
+      initAudio();
+      statsModal.style.display = "none";
+    });
+
+    howToPlayBtn.addEventListener("click", () => {
+      initAudio();
+      guideModal.style.display = "flex";
+    });
+
+    closeGuideBtn.addEventListener("click", () => {
+      initAudio();
+      guideModal.style.display = "none";
+    });
+
+    nextStageBtn.addEventListener("click", () => {
+      initAudio();
+      victoryScreen.style.display = "none";
+      
+      stage++;
+      monstersSpawnedInStage = 0;
+      monstersKilledInStage = 0;
+      bossSpawned = false;
+      monsters = [];
+      projectiles = [];
+      
+      player.hp = Math.min(player.maxHp, player.hp + 30);
+      isPaused = false;
+    });
+
+    restartBtn.addEventListener("click", () => {
+      initAudio();
+      gameoverScreen.style.display = "none";
+      resetGameData();
+      isPaused = false;
+    });
+
+    function goHome() {
+      initAudio();
+      victoryScreen.style.display = "none";
+      gameoverScreen.style.display = "none";
+      resetGameData();
+      isPaused = true;
+      updateLeaderboardUI();
+      lobbyScreen.style.display = "flex";
+    }
+
+    victoryHomeBtn.addEventListener("click", goHome);
+    gameoverHomeBtn.addEventListener("click", goHome);
+
+    claimWeaponBtn.addEventListener("click", () => {
+      initAudio();
+      weaponRewardModal.style.display = "none";
+      isPaused = false;
+    });
+
+    closeWrongBtn.addEventListener("click", () => {
+      initAudio();
+      wrongModal.style.display = "none";
+      isPaused = false;
+    });
+
+    function applyPlayerStats() {
+      const prevMaxHp = player.maxHp;
+      player.maxHp = 100 + playerStats.hp * 10;
+      if (player.maxHp > prevMaxHp) {
+        player.hp += (player.maxHp - prevMaxHp);
+      }
+      if (player.hp > player.maxHp) player.hp = player.maxHp;
+      updateHUD();
+    }
+
+    function updateStatsUI() {
+      document.getElementById("stat-points-display").innerText = statPoints;
+      document.getElementById("reward-points-display").innerText = rewardPoints;
+      document.getElementById("stat-hp-val").innerText = playerStats.hp;
+      document.getElementById("stat-dmg-val").innerText = playerStats.dmg;
+      document.getElementById("stat-cdr-val").innerText = playerStats.cdr;
+      document.getElementById("stat-regen-val").innerText = playerStats.regen;
+    }
+
+    function addStat(type) {
+      if (statPoints <= 0) return;
+      if (type === 'cdr' && playerStats.cdr >= 10) return;
+      playerStats[type]++;
+      statPoints--;
+      applyPlayerStats();
+      updateStatsUI();
+    }
+
+    function convertRewardPoints() {
+      if (rewardPoints >= 100) {
+        const addPoints = Math.floor(rewardPoints / 100);
+        statPoints += addPoints;
+        rewardPoints %= 100;
+        updateStatsUI();
+      }
+    }
+
+    let memoryScores = [];
+
+    function getLeaderboard() {
+      try {
+        const data = localStorage.getItem("pixel_survivor_scores");
+        if (data) {
+          return JSON.parse(data);
+        }
+      } catch(e) {
+        console.log("Không truy cập được localStorage:", e);
+      }
+      return memoryScores;
+    }
+
+    function saveScore(newScore) {
+      if (newScore <= 0) return;
+      let scores = getLeaderboard();
+      scores.push({ score: newScore, date: new Date().toLocaleDateString("vi-VN") });
+      scores.sort((a, b) => b.score - a.score);
+      
+      scores = scores.slice(0, 5);
+      memoryScores = scores;
+
+      try {
+        localStorage.setItem("pixel_survivor_scores", JSON.stringify(scores));
+      } catch(e) {
+        console.log("Lỗi ghi localStorage:", e);
+      }
+      updateLeaderboardUI();
+    }
+
+    function clearLeaderboard() {
+      memoryScores = [];
+      try {
+        localStorage.removeItem("pixel_survivor_scores");
+      } catch(e) {}
+      updateLeaderboardUI();
+    }
+
+    function updateLeaderboardUI() {
+      const scores = getLeaderboard();
+      const listLobby = document.getElementById("lobby-leaderboard-list");
+      const listGameOver = document.getElementById("gameover-leaderboard-list");
+
+      const html = scores.length === 0 
+        ? "<li>Chưa có kỷ lục</li>" 
+        : scores.map(s => `<li><b>${s.score} điểm</b> (${s.date})</li>`).join("");
+
+      if (listLobby) listLobby.innerHTML = html;
+      if (listGameOver) listGameOver.innerHTML = html;
+    }
+
+    function init() {
+      updateLeaderboardUI();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameLoop() {
+      if (!isPaused) {
+        update();
+      }
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function update() {
+      if (playerStats.regen > 0 && player.hp < player.maxHp) {
+        regenTimer += 1 / 60;
+        if (regenTimer >= 1.0) {
+          player.hp = Math.min(player.maxHp, player.hp + playerStats.regen);
+          regenTimer = 0;
+        }
+      }
+
+      if (player.speedBuffTimer > 0) {
+        player.speedBuffTimer -= 1 / 60;
+        player.speed = player.baseSpeed * 1.5;
+      } else {
+        player.speed = player.baseSpeed;
+      }
+
+      let dx = joystickInput.x;
+      let dy = joystickInput.y;
+
+      if (keys["arrowup"] || keys["w"]) dy -= 1;
+      if (keys["arrowdown"] || keys["s"]) dy += 1;
+      if (keys["arrowleft"] || keys["a"]) dx -= 1;
+      if (keys["arrowright"] || keys["d"]) dx += 1;
+
+      const mag = Math.hypot(dx, dy);
+      if (mag > 1) { dx /= mag; dy /= mag; }
+
+      player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x + dx * player.speed));
+      player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y + dy * player.speed));
+
+      spawnTimer++;
+      const spawnInterval = stage >= 4 ? 150 : 240;
+
+      if (spawnTimer % spawnInterval === 0) {
+        if (monstersSpawnedInStage < MONSTERS_PER_STAGE) {
+          const spawnCount = Math.min(
+            Math.floor(Math.random() * 2) + 2, 
+            MONSTERS_PER_STAGE - monstersSpawnedInStage
+          );
+          for (let i = 0; i < spawnCount; i++) {
+            spawnMonster();
+            monstersSpawnedInStage++;
+          }
+        }
+        
+        if (stage % 5 === 0 && !bossSpawned) {
+          spawnBoss();
+          bossSpawned = true;
+        }
+      }
+
+      monsters.forEach(m => {
+        let currentSpeed = m.speed;
+        if (m.slowTimer && m.slowTimer > 0) {
+          currentSpeed *= 0.5;
+          m.slowTimer -= 1 / 60;
+        }
+
+        const angle = Math.atan2(player.y - m.y, player.x - m.x);
+        m.x += Math.cos(angle) * currentSpeed;
+        m.y += Math.sin(angle) * currentSpeed;
+
+        if (m.dotTicks && m.dotTicks > 0) {
+          if (Date.now() - m.lastDotTime >= 100) {
+            m.hp -= 2;
+            m.dotTicks--;
+            m.lastDotTime = Date.now();
+          }
+        }
+
+        if (Math.hypot(player.x - m.x, player.y - m.y) < player.size / 2 + m.size / 2) {
+          const now = Date.now();
+          if (!m.lastAttackTime || now - m.lastAttackTime >= 1000) {
+            player.hp -= m.isBoss ? 5 : 2;
+            m.lastAttackTime = now;
+
+            visualEffects.push({
+              type: "scratch",
+              x: player.x,
+              y: player.y,
+              life: 12,
+              maxLife: 12
+            });
+
+            if (player.hp <= 0) { player.hp = 0; gameOver(); }
+          }
+        }
+      });
+
+      monsters = monsters.filter(m => {
+        if (m.hp <= 0) {
+          const gainedScore = m.isBoss ? 100 : 10;
+          score += gainedScore;
+          rewardPoints += gainedScore;
+          
+          if (!m.isBoss) monstersKilledInStage++;
+
+          if (currentWeapon.id === "sudarshana_chakra") {
+            skillCdTimer = Math.max(0, skillCdTimer - currentWeapon.cd * 0.20);
+          }
+          
+          const rand = Math.random();
+          if (rand < 0.18) {
+            lootBoxes.push({ x: m.x, y: m.y, size: 20 });
+          } else if (rand < 0.28) {
+            powerUps.push({ x: m.x, y: m.y, size: 20, type: "hp", icon: "🧪" });
+          } else if (rand < 0.36) {
+            powerUps.push({ x: m.x, y: m.y, size: 20, type: "speed", icon: "⚡" });
+          }
+          return false;
+        }
+        return true;
+      });
+
+      lootBoxes = lootBoxes.filter(box => {
+        if (Math.hypot(player.x - box.x, player.y - box.y) < player.size / 2 + box.size / 2) {
+          playSound("pickup");
+          isPaused = true;
+          openQuizModal();
+          return false;
+        }
+        return true;
+      });
+
+      powerUps = powerUps.filter(p => {
+        if (Math.hypot(player.x - p.x, player.y - p.y) < player.size / 2 + p.size / 2) {
+          playSound("pickup");
+          if (p.type === "hp") {
+            player.hp = Math.min(player.maxHp, player.hp + 25);
+          } else if (p.type === "speed") {
+            player.speedBuffTimer = 5;
+          }
+          return false;
+        }
+        return true;
+      });
+
+      let totalTargetsInStage = MONSTERS_PER_STAGE + (stage % 5 === 0 ? 1 : 0);
+      let totalKilledInStage = monstersKilledInStage + (stage % 5 === 0 && bossSpawned && !monsters.some(m => m.isBoss) ? 1 : 0);
+
+      if (monstersSpawnedInStage >= MONSTERS_PER_STAGE && totalKilledInStage >= totalTargetsInStage) {
+        triggerVictory();
+        return;
+      }
+
+      if (currentWeapon.id !== "tay_khong") {
+        weaponTimer -= 1 / 60;
+        if (weaponTimer <= 0) {
+          currentWeapon = bareFistWeapon;
+        }
+      }
+
+      if (skillCdTimer > 0) {
+        skillCdTimer -= 1 / 60;
+        if (skillCdTimer < 0) skillCdTimer = 0;
+      }
+
+      projectiles.forEach((p) => {
+        if (p.type === "bullet") {
+          p.x += p.vx; p.y += p.vy;
+          p.life--;
+          monsters.forEach(m => {
+            if (Math.hypot(m.x - p.x, m.y - p.y) < m.size / 2 + 6) {
+              m.hp -= p.dmg;
+              if (p.isToyGun) { m.dotTicks = 10; m.lastDotTime = Date.now(); }
+              if (!p.pierce) p.life = 0;
+            }
+          });
+        } else if (p.type === "wave") {
+          p.x += p.vx;
+          monsters.forEach(m => {
+            if (Math.abs(m.x - p.x) < 20 && !p.hitMonsters.has(m)) {
+              m.hp -= p.dmg;
+              p.hitMonsters.add(m);
+            }
+          });
+          p.life--;
+        } else if (p.type === "sudarshana") {
+          p.t += p.speed;
+          if (p.phase === "forward") {
+            const idx = Math.floor(p.t);
+            const subT = p.t - idx;
+            if (idx >= p.path.length - 1) {
+              p.phase = "returning";
+              p.t = 0;
+            } else {
+              const curr = p.path[idx];
+              const next = p.path[idx + 1];
+              p.x = curr.x + (next.x - curr.x) * subT;
+              p.y = curr.y + (next.y - curr.y) * subT;
+            }
+          } else if (p.phase === "returning") {
+            const retT = p.t / p.returnDuration;
+            p.x = p.startRetX + (player.x - p.startRetX) * retT;
+            p.y = p.startRetY + (player.y - p.startRetY) * retT;
+
+            p.targets.forEach(m => {
+              if (m.hp > 0) {
+                m.x = p.x;
+                m.y = p.y;
+              }
+            });
+
+            if (retT >= 1) {
+              p.life = 0;
+            }
+          }
+        }
+      });
+      projectiles = projectiles.filter(p => p.life > 0);
+
+      visualEffects.forEach(v => {
+        v.life--;
+        if (v.maxLife) v.progress = (v.maxLife - v.life) / v.maxLife;
+
+        if (v.type === "kim_quy_shower") {
+          if (v.life % 10 === 0) {
+            monsters.forEach(m => {
+              if (Math.hypot(m.x - v.x, m.y - v.y) <= v.r) {
+                m.hp -= v.dmgPerTick;
+                m.slowTimer = 1.0;
+              }
+            });
+          }
+        }
+      });
+      visualEffects = visualEffects.filter(v => v.life > 0);
+
+      updateHUD();
+    }
+
+    function castSkill() {
+      if (skillCdTimer > 0 || isPaused) return;
+
+      initAudio();
+      playSound("shoot");
+
+      const cdrFactor = 1 - (playerStats.cdr * 0.05);
+      skillCdTimer = currentWeapon.cd * cdrFactor;
+      
+      const wId = currentWeapon.id;
+      const dmgBonus = 1 + (playerStats.dmg * 0.1);
+
+      let closest = null, minDist = currentWeapon.range;
+      monsters.forEach(m => {
+        const d = Math.hypot(m.x - player.x, m.y - player.y);
+        if (d <= minDist) { minDist = d; closest = m; }
+      });
+
+      if (wId === "tay_khong") {
+        const dmg = 12 * dmgBonus;
+        let targetAngle = 0;
+        let targetX = player.x + 35;
+        let targetY = player.y;
+
+        if (closest) {
+          targetAngle = Math.atan2(closest.y - player.y, closest.x - player.x);
+          targetX = player.x + Math.cos(targetAngle) * 35;
+          targetY = player.y + Math.sin(targetAngle) * 35;
+          closest.hp -= dmg;
+        }
+
+        visualEffects.push({
+          type: "punch",
+          startX: player.x,
+          startY: player.y,
+          targetX: targetX,
+          targetY: targetY,
+          angle: targetAngle,
+          life: 12,
+          maxLife: 12
+        });
+      } else if (wId === "kiem_go" || wId === "kiem_sat") {
+        const dmg = (wId === "kiem_go" ? 30 : 50) * dmgBonus;
+        if (closest) {
+          closest.hp -= dmg;
+          visualEffects.push({ type: "slash", x: closest.x, y: closest.y, life: 10, maxLife: 10, color: "#fff" });
+        } else {
+          visualEffects.push({ type: "slash", x: player.x + 30, y: player.y, life: 10, maxLife: 10, color: "#fff" });
+        }
+      } else if (wId === "kiem_lua") {
+        const targetX = closest ? closest.x : player.x + 30;
+        const targetY = closest ? closest.y : player.y;
+        visualEffects.push({ type: "slash", x: targetX, y: targetY, life: 12, maxLife: 12, color: "#ff5722" });
+        monsters.forEach(m => {
+          if (Math.hypot(m.x - targetX, m.y - targetY) <= 1.5 * CELL_SIZE) {
+            m.hp -= 15 * dmgBonus;
+            m.dotTicks = 15;
+            m.lastDotTime = Date.now();
+          }
+        });
+      } else if (wId === "cung_go" || wId === "sung_luc" || wId === "sung_plasma" || wId === "no_than_kim_quy") {
+        const isNoThan = wId === "no_than_kim_quy";
+        const dmg = (wId === "cung_go" ? 15 : (wId === "sung_luc" ? 25 : (isNoThan ? 40 : 35))) * dmgBonus;
+        const color = wId === "cung_go" ? "#8d6e63" : (wId === "sung_luc" ? "#ffeb3b" : (isNoThan ? "#ffd700" : "#e91e63"));
+        const speed = wId === "sung_plasma" ? 14 : 10;
+        const angle = closest ? Math.atan2(closest.y - player.y, closest.x - player.x) : 0;
+        projectiles.push({
+          type: "bullet", x: player.x, y: player.y,
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+          dmg: dmg, life: 30, color: color, pierce: isNoThan
+        });
+
+        if (isNoThan) {
+          const targetX = closest ? closest.x : player.x + Math.cos(angle) * 120;
+          const targetY = closest ? closest.y : player.y + Math.sin(angle) * 120;
+          visualEffects.push({
+            type: "kim_quy_shower",
+            x: targetX,
+            y: targetY,
+            r: 80,
+            dmgPerTick: 10 * dmgBonus,
+            life: 240,
+            maxLife: 240
+          });
+        }
+      } else if (wId === "truong_go") {
+        const targetX = closest ? closest.x : player.x + 100;
+        const targetY = closest ? closest.y : player.y;
+        visualEffects.push({ type: "explosion", x: targetX, y: targetY, r: 60, life: 15, maxLife: 15 });
+        monsters.forEach(m => {
+          if (Math.hypot(m.x - targetX, m.y - targetY) <= 60) m.hp -= 20 * dmgBonus;
+        });
+      } else if (wId === "truong_bang") {
+        const targetX = closest ? closest.x : player.x + 80;
+        const targetY = closest ? closest.y : player.y;
+        visualEffects.push({ type: "ice_blast", x: targetX, y: targetY, r: 80, life: 20, maxLife: 20 });
+        monsters.forEach(m => {
+          if (Math.hypot(m.x - targetX, m.y - targetY) <= 80) {
+            m.hp -= 40 * dmgBonus;
+            m.slowTimer = 3.0;
+          }
+        });
+      } else if (wId === "sung_do_choi") {
+        const angle = closest ? Math.atan2(closest.y - player.y, closest.x - player.x) : 0;
+        projectiles.push({
+          type: "bullet", x: player.x, y: player.y,
+          vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8,
+          dmg: 0, isToyGun: true, life: 35, color: "#e91e63"
+        });
+      } else if (wId === "riu_sat") {
+        const radius = 3 * CELL_SIZE;
+        const dmg = 60 * dmgBonus;
+        visualEffects.push({ type: "spin_slash", x: player.x, y: player.y, r: radius, life: 15, maxLife: 15 });
+        monsters.forEach(m => {
+          if (Math.hypot(m.x - player.x, m.y - player.y) <= radius) {
+            m.hp -= dmg;
+          }
+        });
+      } else if (wId === "zeus_lightning") {
+        for (let i = 0; i < 10; i++) {
+          let targetM = monsters[i % monsters.length];
+          let tx = targetM ? targetM.x : Math.random() * canvas.width;
+          let ty = targetM ? targetM.y : Math.random() * canvas.height;
+          if (targetM) targetM.hp -= 100 * dmgBonus;
+          visualEffects.push({ type: "lightning", x: tx, y: ty, life: 12, maxLife: 12 });
+        }
+      } else if (wId === "poseidon_trident") {
+        const dmg = 150 * dmgBonus;
+        projectiles.push({ type: "wave", x: 0, vx: 6, dmg: dmg, life: 90, hitMonsters: new Set() });
+        projectiles.push({ type: "wave", x: canvas.width, vx: -6, dmg: dmg, life: 90, hitMonsters: new Set() });
+      } else if (wId === "sudarshana_chakra") {
+        const sorted = [...monsters].sort((a, b) => {
+          return Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y);
+        }).slice(0, 5);
+
+        const targets = sorted;
+        const path = [{ x: player.x, y: player.y }, ...targets.map(m => ({ x: m.x, y: m.y }))];
+
+        targets.forEach(m => {
+          m.dotTicks = 15;
+          m.lastDotTime = Date.now();
+        });
+
+        const startRet = path[path.length - 1] || { x: player.x, y: player.y };
+
+        projectiles.push({
+          type: "sudarshana",
+          x: player.x,
+          y: player.y,
+          path: path,
+          targets: targets,
+          t: 0,
+          speed: 0.15,
+          phase: "forward",
+          startRetX: startRet.x,
+          startRetY: startRet.y,
+          returnDuration: 20,
+          life: 999
+        });
+      }
+    }
+
+    function spawnMonster() {
+      let x = Math.random() < 0.5 ? -20 : canvas.width + 20;
+      let y = Math.random() * canvas.height;
+      const icon = animalIcons[Math.floor(Math.random() * animalIcons.length)];
+      const monsterMaxHp = 20 + (stage - 1) * 10;
+
+      monsters.push({
+        x: x, y: y, size: 26, speed: 1 + Math.random() * 0.4,
+        hp: monsterMaxHp, maxHp: monsterMaxHp, icon: icon,
+        dotTicks: 0, lastDotTime: 0, isBoss: false, slowTimer: 0
+      });
+    }
+
+    function spawnBoss() {
+      let x = canvas.width / 2;
+      let y = -40;
+      const bossMaxHp = 200 * (stage / 5);
+
+      monsters.push({
+        x: x, y: y, size: 48, speed: 0.8,
+        hp: bossMaxHp, maxHp: bossMaxHp,
+        icon: stage % 10 === 0 ? "👑" : "👹",
+        dotTicks: 0, lastDotTime: 0, isBoss: true, slowTimer: 0
+      });
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "#35454e"; ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += CELL_SIZE) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += CELL_SIZE) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+
+      lootBoxes.forEach(box => {
+        ctx.font = "22px sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("🎁", box.x, box.y);
+      });
+
+      powerUps.forEach(p => {
+        ctx.font = "20px sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(p.icon, p.x, p.y);
+      });
+
+      monsters.forEach(m => {
+        ctx.font = m.isBoss ? "40px sans-serif" : "24px sans-serif"; 
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(m.icon, m.x, m.y);
+
+        const barWidth = m.isBoss ? 50 : 26;
+        const barHeight = m.isBoss ? 6 : 4;
+        const barY = m.y - (m.isBoss ? 30 : 20);
+
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(m.x - barWidth / 2, barY, barWidth, barHeight);
+        ctx.fillStyle = m.isBoss ? "#ff9800" : "#f44336";
+        ctx.fillRect(m.x - barWidth / 2, barY, (m.hp / m.maxHp) * barWidth, barHeight);
+      });
+
+      projectiles.forEach(p => {
+        if (p.type === "bullet") {
+          ctx.fillStyle = p.color || "#fff";
+          ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill();
+        } else if (p.type === "wave") {
+          ctx.fillStyle = "rgba(33, 150, 243, 0.5)";
+          ctx.fillRect(p.x - 15, 0, 30, canvas.height);
+        } else if (p.type === "sudarshana") {
+          ctx.font = "24px sans-serif";
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText("☸️", p.x, p.y);
+        }
+      });
+
+      visualEffects.forEach(v => {
+        if (v.type === "punch") {
+          const t = v.progress || 0;
+          const currentX = v.startX + (v.targetX - v.startX) * t;
+          const currentY = v.startY + (v.targetY - v.startY) * t;
+
+          ctx.strokeStyle = `rgba(255, 235, 59, ${1 - t})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(currentX, currentY, t * 25, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.save();
+          ctx.translate(currentX, currentY);
+          ctx.rotate(v.angle);
+          const fontSize = Math.floor(20 + t * 15);
+          ctx.font = `${fontSize}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("👊", 0, 0);
+          ctx.restore();
+        } else if (v.type === "scratch") {
+          const t = v.progress || 0;
+          ctx.strokeStyle = `rgba(255, 23, 68, ${1 - t})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(v.x - 15, v.y - 15); ctx.lineTo(v.x + 5, v.y + 15);
+          ctx.moveTo(v.x - 5, v.y - 18);  ctx.lineTo(v.x + 15, v.y + 12);
+          ctx.moveTo(v.x + 5, v.y - 15);  ctx.lineTo(v.x + 25, v.y + 15);
+          ctx.stroke();
+        } else if (v.type === "slash") {
+          ctx.strokeStyle = v.color || "#fff"; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(v.x, v.y, 20, 0, Math.PI); ctx.stroke();
+        } else if (v.type === "spin_slash") {
+          const t = v.progress || 0;
+          ctx.strokeStyle = `rgba(255, 152, 0, ${1 - t})`;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.arc(v.x, v.y, v.r * (0.3 + 0.7 * t), 0, Math.PI * 2);
+          ctx.stroke();
+          
+          ctx.fillStyle = `rgba(255, 87, 34, ${(1 - t) * 0.3})`;
+          ctx.beginPath();
+          ctx.arc(v.x, v.y, v.r * (0.3 + 0.7 * t), 0, Math.PI * 2);
+          ctx.fill();
+        } else if (v.type === "explosion") {
+          ctx.fillStyle = "rgba(255, 87, 34, 0.6)";
+          ctx.beginPath(); ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2); ctx.fill();
+        } else if (v.type === "lightning") {
+          ctx.strokeStyle = "#ffeb3b"; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.moveTo(v.x, 0); ctx.lineTo(v.x, v.y); ctx.stroke();
+        } else if (v.type === "ice_blast") {
+          ctx.fillStyle = "rgba(0, 188, 212, 0.5)";
+          ctx.beginPath(); ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2); ctx.fill();
+        } else if (v.type === "kim_quy_shower") {
+          const t = v.progress || 0;
+          ctx.fillStyle = "rgba(255, 215, 0, 0.2)";
+          ctx.strokeStyle = "#ffd700";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          for (let i = 0; i < 5; i++) {
+            const rx = v.x + (Math.random() - 0.5) * v.r * 1.5;
+            const ry = v.y + (Math.random() - 0.5) * v.r * 1.5;
+            ctx.fillStyle = "#ffea00";
+            ctx.beginPath();
+            ctx.arc(rx, ry, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      });
+
+      ctx.font = "24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(player.icon, player.x, player.y);
+
+      if (player.speedBuffTimer > 0) {
+        ctx.strokeStyle = "rgba(255, 235, 59, 0.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 18, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (currentWeapon.id !== "tay_khong") {
+        ctx.fillStyle = "#ffeb3b"; ctx.font = "bold 13px sans-serif";
+        ctx.fillText(`${currentWeapon.icon} ${Math.ceil(weaponTimer)}s`, player.x, player.y - 25);
+      }
+    }
+
+    const quizModal = document.getElementById("quiz-modal");
+    let selectedDiff = "easy";
+    let selectedQuestion = null;
+
+    function openQuizModal() {
+      document.getElementById("diff-step").style.display = "flex";
+      document.getElementById("quiz-step").style.display = "none";
+      document.getElementById("modal-title").innerText = "🎁 HỘP QUÀ BÍ MẬT";
+      quizModal.style.display = "flex";
+    }
+
+    function selectDifficulty(diff) {
+      selectedDiff = diff;
+      const list = questionBank[diff];
+      selectedQuestion = list[Math.floor(Math.random() * list.length)];
+
+      document.getElementById("diff-step").style.display = "none";
+      document.getElementById("quiz-step").style.display = "block";
+      document.getElementById("modal-title").innerText = `ĐỘ KHÓ: ${diff.toUpperCase()}`;
+      document.getElementById("question-text").innerText = selectedQuestion.q;
+
+      const opts = document.getElementById("options-container");
+      opts.innerHTML = "";
+      selectedQuestion.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "opt-btn";
+        btn.innerText = `${idx + 1}. ${opt}`;
+        btn.onclick = () => checkAnswer(idx);
+        opts.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(choice) {
+      quizModal.style.display = "none";
+      if (choice === selectedQuestion.answer) {
+        playSound("victory");
+        const pool = weaponPools[selectedDiff];
+        currentWeapon = pool[Math.floor(Math.random() * pool.length)];
+        weaponTimer = 15;
+        skillCdTimer = 0;
+
+        showWeaponRewardPopup(currentWeapon);
+      } else {
+        playSound("wrong");
+        wrongModal.style.display = "flex";
+      }
+    }
+
+    function showWeaponRewardPopup(weapon) {
+      document.getElementById("reward-weapon-icon").innerText = weapon.icon;
+      document.getElementById("reward-weapon-name").innerText = weapon.name;
+      document.getElementById("reward-weapon-desc").innerText = `${weapon.desc} (Hồi chiêu: ${weapon.cd}s)`;
+      
+      const iconEl = document.getElementById("reward-weapon-icon");
+      iconEl.style.animation = 'none';
+      iconEl.offsetHeight;
+      iconEl.style.animation = 'zoomBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+      weaponRewardModal.style.display = "flex";
+    }
+
+    function updateHUD() {
+      document.getElementById("hp-fill").style.width = `${(player.hp / player.maxHp) * 100}%`;
+      document.getElementById("hp-text").innerText = `${Math.ceil(player.hp)}/${player.maxHp}`;
+      document.getElementById("stage-display").innerText = stage;
+      
+      const remainingMonsters = MONSTERS_PER_STAGE - monstersKilledInStage;
+      document.getElementById("monsters-left").innerText = `${Math.max(0, remainingMonsters)}/10`;
+
+      const wDisplay = document.getElementById("weapon-display");
+      const cdText = document.getElementById("cd-text");
+
+      wDisplay.innerText = `${currentWeapon.icon} ${currentWeapon.name}`;
+      if (skillCdTimer > 0) {
+        skillBtn.disabled = true;
+        cdText.innerText = `(${skillCdTimer.toFixed(1)}s)`;
+      } else {
+        skillBtn.disabled = false;
+        cdText.innerText = "(Sẵn sàng)";
+      }
+    }
+
+    function resetGameData() {
+      applyPlayerStats();
+      player.hp = player.maxHp; 
+      score = 0; 
+      stage = 1;
+      player.speedBuffTimer = 0;
+      monstersSpawnedInStage = 0; monstersKilledInStage = 0; bossSpawned = false;
+      monsters = []; projectiles = []; visualEffects = []; lootBoxes = []; powerUps = [];
+      currentWeapon = bareFistWeapon; weaponTimer = 0; skillCdTimer = 0;
+      player.x = canvas.width / 2; player.y = canvas.height / 2;
+      handleJoystickEnd({ touches: [] });
+    }
+
+    function gameOver() {
+      playSound("gameover");
+      isPaused = true;
+      saveScore(score);
+
+      document.getElementById("gameover-stage").innerText = stage;
+      document.getElementById("gameover-score").innerText = score;
+
+      lobbyScreen.style.display = "none";
+      victoryScreen.style.display = "none";
+      weaponRewardModal.style.display = "none";
+      wrongModal.style.display = "none";
+      guideModal.style.display = "none";
+      statsModal.style.display = "none";
+      gameoverScreen.style.display = "flex";
+    }
+
+    function triggerVictory() {
+      playSound("victory");
+      isPaused = true;
+
+      document.getElementById("victory-title").innerText = `🏆 HOÀN THÀNH ẢI ${stage}! 🏆`;
+      document.getElementById("final-score").innerText = score;
+
+      lobbyScreen.style.display = "none";
+      gameoverScreen.style.display = "none";
+      weaponRewardModal.style.display = "none";
+      wrongModal.style.display = "none";
+      guideModal.style.display = "none";
+      statsModal.style.display = "none";
+      victoryScreen.style.display = "flex";
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
